@@ -1,0 +1,15 @@
+const CONFIG = {
+  DEFAULT_ESP_IP: "192.168.1.15",
+  POLL_INTERVAL_MS: 1000,
+  REQUEST_TIMEOUT_MS: 2500,
+  STORAGE_KEY: "smartdesk_esp_ip",
+  LOG_MAX_ROWS: 10,
+  CHART: {
+    MAX_POINTS: 60
+  },
+  POSTURE: {
+    IDEAL_MIN_CM: 40,
+    IDEAL_MAX_CM: 70,
+    RANGE_MAX_CM: 200
+  }
+};

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Desk &amp; Posture Guardian</title>
+  <link rel="stylesheet" href="style/base.css" />
+  <link rel="stylesheet" href="style/layout.css" />
+  <link rel="stylesheet" href="style/components.css" />
+  <link rel="stylesheet" href="style/widgets.css" />
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-mark">SD</div>
+        <h1>Smart Desk <span>&amp;</span> Posture Guardian</h1>
+      </div>
+      <div class="connection">
+        <input id="esp-ip" type="text" placeholder="IP ESP8266 (mis. 192.168.1.15)" autocomplete="off" spellcheck="false" />
+        <button id="btn-connect" class="btn btn-primary">Hubungkan</button>
+        <span id="conn-badge" class="badge badge-muted">Terputus</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="grid">
+
+    <section class="card card-distance">
+      <h2>Jarak Wajah ke Laptop</h2>
+      <div class="distance-value">
+        <span id="distance">--</span><small>cm</small>
+      </div>
+      <div class="range-bar">
+        <div id="range-ideal" class="range-ideal"></div>
+        <div id="range-fill" class="range-fill" data-level=""></div>
+      </div>
+      <div class="scale-labels">
+        <span>0</span><span id="lbl-min">40</span><span id="lbl-max">70</span><span id="lbl-range">200</span>
+      </div>
+      <p id="posture-status" class="posture-status" data-level="">Menunggu data&hellip;</p>
+    </section>
+
+    <section class="card card-chart">
+      <h2>Riwayat Jarak</h2>
+      <canvas id="chart"></canvas>
+      <p class="chart-hint">Area hijau = zona ideal (jarak aman mata ke layar).</p>
+    </section>
+
+    <section class="card card-desk">
+      <h2>Meja Pintar</h2>
+      <div class="seg-group">
+        <button id="mode-manual" class="seg active">Manual</button>
+        <button id="mode-auto" class="seg">Otomatis</button>
+      </div>
+      <div class="desk-actions">
+        <button class="btn" data-desk="up">Naik</button>
+        <button class="btn" data-desk="stop">Stop</button>
+        <button class="btn" data-desk="down">Turun</button>
+      </div>
+      <div class="lamp-row">
+        <span>Lampu Meja</span>
+        <label class="switch">
+          <input type="checkbox" id="lamp-toggle" />
+          <span class="slider"></span>
+        </label>
+      </div>
+      <p id="desk-state" class="desk-note muted">Status meja: idle</p>
+    </section>
+
+    <section class="card card-device">
+      <h2>Perangkat</h2>
+      <ul class="device-list">
+        <li><span>IP ESP8266</span><b id="dev-ip">-</b></li>
+        <li><span>Uptime</span><b id="dev-uptime">-</b></li>
+        <li><span>Sinyal WiFi</span><b id="dev-rssi">-</b></li>
+        <li><span>Jumlah Pembacaan</span><b id="dev-reads">0</b></li>
+      </ul>
+    </section>
+
+    <section class="card card-log wide">
+      <h2>Log Postur</h2>
+      <table class="log-table">
+        <thead>
+          <tr><th>Waktu</th><th>Jarak</th><th>Status</th></tr>
+        </thead>
+        <tbody id="log-body">
+          <tr class="empty"><td colspan="3">Belum ada perubahan postur terdeteksi</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+  </main>
+
+  <footer class="app-footer">HC-SR04 &middot; ESP8266 &middot; Dashboard lokal tanpa server tambahan</footer>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/posture.js"></script>
+  <script src="js/chart.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

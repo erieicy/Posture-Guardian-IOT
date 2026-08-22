@@ -1,0 +1,106 @@
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+}
+
+.header-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-mark {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 15px;
+  color: #07121f;
+}
+
+.brand h1 {
+  font-size: 17px;
+  letter-spacing: 0.3px;
+}
+
+.brand h1 span {
+  color: var(--accent);
+}
+
+.connection {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.connection input {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 9px 12px;
+  border-radius: 10px;
+  width: 240px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.connection input:focus {
+  border-color: var(--accent);
+}
+
+.grid {
+  max-width: 1100px;
+  margin: 26px auto;
+  padding: 0 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+.card-log.wide {
+  grid-column: 1 / -1;
+}
+
+.app-footer {
+  max-width: 1100px;
+  margin: 0 auto 30px;
+  padding: 0 20px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .header-inner {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .connection {
+    width: 100%;
+  }
+
+  .connection input {
+    flex: 1;
+    width: auto;
+  }
+}
