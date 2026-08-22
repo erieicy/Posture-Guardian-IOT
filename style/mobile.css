@@ -1,0 +1,97 @@
+@media (max-width: 768px) {
+  .header-inner {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .brand {
+    justify-content: center;
+  }
+
+  .brand h1 {
+    font-size: 15px;
+  }
+
+  .connection {
+    width: 100%;
+  }
+
+  .connection input {
+    flex: 1;
+    min-width: 0;
+    width: auto;
+  }
+
+  #btn-connect {
+    white-space: nowrap;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+    margin: 16px auto;
+    padding: 0 12px;
+    gap: 14px;
+  }
+
+  .card {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .distance-value {
+    font-size: 44px;
+  }
+
+  .usage-value {
+    font-size: 34px;
+  }
+
+  .btn {
+    padding: 12px 14px;
+  }
+
+  .seg {
+    padding: 11px 10px;
+  }
+
+  .week-chart {
+    height: 128px;
+  }
+
+  .log-table {
+    font-size: 13px;
+  }
+
+  .log-table th {
+    padding: 7px 8px;
+  }
+
+  .log-table td {
+    padding: 8px;
+  }
+
+  .tips-list {
+    grid-template-columns: 1fr;
+  }
+
+  .app-footer {
+    margin-bottom: 22px;
+  }
+}
+
+@media (max-width: 380px) {
+  .distance-value {
+    font-size: 38px;
+  }
+
+  .usage-value {
+    font-size: 29px;
+  }
+
+  .brand h1 {
+    font-size: 14px;
+  }
+}

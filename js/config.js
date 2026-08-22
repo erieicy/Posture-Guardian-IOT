@@ -5,6 +5,7 @@ const CONFIG = {
   STORAGE_KEY: "smartdesk_esp_ip",
   DAILY_STORAGE_KEY: "smartdesk_daily_v1",
   DAILY_DAYS: 7,
+  NOTIF_THROTTLE_MS: 120000,
   LOG_MAX_ROWS: 10,
   CHART: {
     MAX_POINTS: 60

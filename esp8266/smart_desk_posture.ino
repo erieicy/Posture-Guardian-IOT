@@ -18,6 +18,7 @@ const int PIN_TRIG = 14;      // D5 - HC-SR04 TRIG
 const int PIN_ECHO = 12;      // D6 - HC-SR04 ECHO (voltage divider 5V -> 3.3V)
 const int PIN_LAMP = 13;      // D7 - relay lampu meja
 const int PIN_LED_ALERT = 15; // D8 - LED istirahat (menyala saat duduk terlalu lama)
+const int PIN_BUZZER = 16;    // D0 - buzzer aktif (bunyi saat terlalu dekat)
 const int PIN_DESK_UP = 0;    // D3 - driver motor IN1
 const int PIN_DESK_DOWN = 2;  // D4 - driver motor IN2
 
@@ -31,6 +32,9 @@ const unsigned long SAMPLE_MS = 300;
 const unsigned long OLED_UPDATE_MS = 500;
 const unsigned long PRESENCE_RESET_MS = 15000;
 const unsigned long SIT_LIMIT_S = 45UL * 60UL;
+const unsigned long CLOSE_BUZZ_DELAY_MS = 3000;
+const unsigned long BUZZER_PULSE_MS = 250;
+const unsigned long ALERT_DISPLAY_MS = 8000;
 
 #if USE_OLED
 Adafruit_SSD1306 display(128, 64, &Wire, -1);
@@ -43,11 +47,15 @@ String deskState = "idle";
 bool lampOn = false;
 bool moving = false;
 bool oledOk = false;
+bool buzzerEn = true;
 
 unsigned long moveEndTime = 0;
 unsigned long lastAutoCheck = 0;
 unsigned long lastSampleMs = 0;
 unsigned long lastOledMs = 0;
+unsigned long closeStartMs = 0;
+unsigned long oledAlertUntil = 0;
+String oledAlert = "";
 
 float currentCm = 0;
 bool present = false;
@@ -106,6 +114,11 @@ void sampleSensor() {
     lastSeenMs = now;
 
     String k = postureKey(currentCm);
+    if (k == "too_close") {
+      if (closeStartMs == 0) closeStartMs = now;
+    } else {
+      closeStartMs = 0;
+    }
     if (k == "too_close" || k == "too_far") {
       if (badStartMs == 0) badStartMs = now;
     } else if (k == "ideal") {
@@ -114,10 +127,20 @@ void sampleSensor() {
   } else if (present && now - lastSeenMs > PRESENCE_RESET_MS) {
     present = false;
     badStartMs = 0;
+    closeStartMs = 0;
     presentStartMs = 0;
   }
 
   digitalWrite(PIN_LED_ALERT, sitAlertActive() ? HIGH : LOW);
+}
+
+void updateBuzzer() {
+  bool buzzing = false;
+  if (buzzerEn && present && closeStartMs != 0 &&
+      millis() - closeStartMs > CLOSE_BUZZ_DELAY_MS) {
+    buzzing = ((millis() / BUZZER_PULSE_MS) % 2) == 0;
+  }
+  digitalWrite(PIN_BUZZER, buzzing ? HIGH : LOW);
 }
 
 void motorsOff() {
@@ -147,6 +170,22 @@ void updateOled() {
 #if USE_OLED
   if (!oledOk) return;
 
+  if (oledAlert.length() > 0 && millis() < oledAlertUntil) {
+    display.clearDisplay();
+    display.setTextColor(SSD1306_WHITE);
+    display.setTextSize(1);
+    display.setCursor(0, 0);
+    display.println(F("** PERINGATAN **"));
+    display.setCursor(0, 20);
+    display.println(oledAlert);
+    display.setCursor(0, 54);
+    char jb[24];
+    snprintf(jb, sizeof(jb), "Jarak: %3.0f cm", (double)currentCm);
+    display.println(jb);
+    display.display();
+    return;
+  }
+
   char aktif[12];
   char duduk[12];
   formatHMS(millis() / 1000UL, aktif, sizeof(aktif));
@@ -172,6 +211,7 @@ void updateOled() {
   display.println(duduk);
   display.setCursor(0, 54);
   if (sitAlertActive()) display.println(F(">> PERLU ISTIRAHAT <<"));
+  else if (closeStartMs != 0 && millis() - closeStartMs > CLOSE_BUZZ_DELAY_MS) display.println(F(">> TERLALU DEKAT! <<"));
   else display.println(F("Status: aman"));
   display.display();
 #endif
@@ -194,13 +234,14 @@ void handleData() {
   char buf[320];
   snprintf(buf, sizeof(buf),
            "{\"distance_cm\":%.1f,\"posture\":\"%s\",\"status_label\":\"%s\","
-           "\"mode\":\"%s\",\"lamp\":%s,\"desk_state\":\"%s\",\"uptime_s\":%lu,"
+           "\"mode\":\"%s\",\"lamp\":%s,\"buzzer_en\":%s,\"desk_state\":\"%s\",\"uptime_s\":%lu,"
            "\"presence_s\":%lu,\"bad_posture_s\":%lu,\"sit_alert\":%s,\"rssi\":%d}",
            currentCm,
            postureKey(currentCm).c_str(),
            postureLabel(currentCm).c_str(),
            mode.c_str(),
            lampOn ? "true" : "false",
+           buzzerEn ? "true" : "false",
            deskState.c_str(),
            millis() / 1000UL,
            presenceSeconds(),
@@ -224,6 +265,12 @@ void handleControl() {
     if (value == "toggle") lampOn = !lampOn;
     else lampOn = (value == "on");
     digitalWrite(PIN_LAMP, lampOn ? HIGH : LOW);
+  } else if (action == "buzzer") {
+    if (value == "toggle") buzzerEn = !buzzerEn;
+    else buzzerEn = (value == "on");
+  } else if (action == "oled_alert" && value.length() > 0) {
+    oledAlert = value.length() > 40 ? value.substring(0, 40) : value;
+    oledAlertUntil = millis() + ALERT_DISPLAY_MS;
   } else if (action == "sit_reset") {
     presentStartMs = millis();
     lastSeenMs = millis();
@@ -245,12 +292,14 @@ void setup() {
   pinMode(PIN_ECHO, INPUT);
   pinMode(PIN_LAMP, OUTPUT);
   pinMode(PIN_LED_ALERT, OUTPUT);
+  pinMode(PIN_BUZZER, OUTPUT);
   pinMode(PIN_DESK_UP, OUTPUT);
   pinMode(PIN_DESK_DOWN, OUTPUT);
 
   motorsOff();
   digitalWrite(PIN_LAMP, LOW);
   digitalWrite(PIN_LED_ALERT, LOW);
+  digitalWrite(PIN_BUZZER, LOW);
 
 #if USE_OLED
   Wire.begin(PIN_SDA, PIN_SCL);
@@ -301,6 +350,8 @@ void loop() {
     lastSampleMs = now;
     sampleSensor();
   }
+
+  updateBuzzer();
 
   if (moving && now > moveEndTime) {
     motorsOff();

@@ -15,7 +15,10 @@
     modeManual: $("mode-manual"),
     modeAuto: $("mode-auto"),
     lamp: $("lamp-toggle"),
+    buzzer: $("buzzer-toggle"),
     deskState: $("desk-state"),
+    notifBtn: $("btn-notif"),
+    notifStatus: $("notif-status"),
     cardUsage: $("card-usage"),
     usageTime: $("usage-time"),
     sitTime: $("sit-time"),
@@ -42,9 +45,35 @@
     connected: false,
     mode: "manual",
     lastKey: null,
+    prevSitAlert: false,
     reads: 0,
     timer: null
   };
+
+  function toast(msg, level) {
+    let stack = document.getElementById("toast-stack");
+    if (!stack) {
+      stack = document.createElement("div");
+      stack.id = "toast-stack";
+      stack.className = "toast-stack";
+      document.body.appendChild(stack);
+    }
+    while (stack.children.length >= 3) stack.removeChild(stack.firstChild);
+    const el = document.createElement("div");
+    el.className = `toast ${level || ""}`;
+    el.textContent = msg;
+    stack.appendChild(el);
+    setTimeout(() => {
+      el.classList.add("hide");
+      setTimeout(() => el.remove(), 300);
+    }, 4500);
+  }
+
+  function deliver(tag, title, body) {
+    if (Notify.supported() && Notify.permission() === "granted" && Notify.fire(title, body, tag)) return;
+    const msg = tag === "close" ? "WAJAH TERLALU DEKAT!" : "SAATNYA ISTIRAHAT!";
+    control("oled_alert", msg);
+  }
 
   function initZones() {
     const z = Posture.zonePct();
@@ -219,6 +248,17 @@
 
     updateSaran(p.key, sitAlert);
 
+    if (p.key === "too_close" && state.lastKey !== "too_close" && cm > 0) {
+      deliver("close", "Postur Guardian", "Terlalu dekat dengan layar! Mundurkan kursi Anda.");
+      toast("Terlalu dekat dengan laptop! Mundur sedikit.", "danger");
+    }
+
+    if (sitAlert && !state.prevSitAlert) {
+      deliver("sit", "Saatnya Istirahat", "Anda duduk terlalu lama. Bangun dan peregangan dulu.");
+      toast("Anda duduk terlalu lama — saatnya istirahat.", "warn");
+    }
+    state.prevSitAlert = sitAlert;
+
     if (p.key !== state.lastKey) {
       if (state.lastKey !== null && cm > 0) addLog(cm, p);
       state.lastKey = p.key;
@@ -229,6 +269,9 @@
 
     if (typeof data.mode === "string") applyMode(data.mode);
     if (typeof data.lamp === "boolean") els.lamp.checked = data.lamp;
+    if (typeof data.buzzer_en === "boolean" && els.buzzer.checked !== data.buzzer_en) {
+      els.buzzer.checked = data.buzzer_en;
+    }
     els.deskState.textContent = `Status meja: ${data.desk_state || "idle"}`;
 
     els.devIp.textContent = els.ipInput.value.trim();
@@ -292,11 +335,39 @@
 
   els.sitReset.addEventListener("click", () => control("sit_reset", "1"));
 
+  els.buzzer.addEventListener("change", () =>
+    control("buzzer", els.buzzer.checked ? "on" : "off")
+  );
+
+  function updateNotifUi() {
+    const perm = Notify.permission();
+    const map = {
+      granted: ["badge-ok", "Aktif"],
+      denied: ["badge-warn", "Via OLED"],
+      unsupported: ["badge-muted", "Via OLED"],
+      default: ["badge-muted", "Belum aktif"]
+    };
+    const entry = map[perm] || map.default;
+    els.notifStatus.className = `badge ${entry[0]}`;
+    els.notifStatus.textContent = entry[1];
+    els.notifBtn.textContent = perm === "granted" ? "Notifikasi Aktif" : "Aktifkan Notifikasi";
+  }
+
+  els.notifBtn.addEventListener("click", async () => {
+    const result = await Notify.enable();
+    updateNotifUi();
+    if (result === "granted") toast("Notifikasi desktop diaktifkan.", "ok");
+    else if (result === "denied") toast("Izin notifikasi ditolak. Peringatan dikirim lewat OLED.", "warn");
+    else if (result === "unsupported") toast("Browser tidak mendukung notifikasi. Peringatan dikirim lewat OLED.", "warn");
+    else if (result === "default") toast("Izin belum dijawab. Coba klik lagi.", "warn");
+  });
+
   window.addEventListener("resize", () => chart.draw());
 
   initZones();
   buildTips();
   renderWeek();
+  updateNotifUi();
   const savedIp = localStorage.getItem(CONFIG.STORAGE_KEY) || CONFIG.DEFAULT_ESP_IP;
   els.ipInput.value = savedIp;
   Api.setBaseUrl(savedIp);

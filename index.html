@@ -3,11 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f172a" />
   <title>Smart Desk &amp; Posture Guardian</title>
   <link rel="stylesheet" href="style/base.css" />
   <link rel="stylesheet" href="style/layout.css" />
   <link rel="stylesheet" href="style/components.css" />
   <link rel="stylesheet" href="style/widgets.css" />
+  <link rel="stylesheet" href="style/mobile.css" />
 </head>
 <body>
 
@@ -66,6 +68,13 @@
           <span class="slider"></span>
         </label>
       </div>
+      <div class="lamp-row">
+        <span>Buzzer Jarak Dekat</span>
+        <label class="switch">
+          <input type="checkbox" id="buzzer-toggle" checked />
+          <span class="slider"></span>
+        </label>
+      </div>
       <p id="desk-state" class="desk-note muted">Status meja: idle</p>
     </section>
 
@@ -94,6 +103,11 @@
         <li><span>Sinyal WiFi</span><b id="dev-rssi">-</b></li>
         <li><span>Jumlah Pembacaan</span><b id="dev-reads">0</b></li>
       </ul>
+      <div class="notif-row">
+        <button id="btn-notif" class="btn btn-primary">Aktifkan Notifikasi</button>
+        <span id="notif-status" class="badge badge-muted">Belum aktif</span>
+      </div>
+      <p class="chart-hint">Bila notifikasi browser tidak tersedia, peringatan dikirim ke OLED di meja Anda.</p>
     </section>
 
     <section class="card card-saran wide">
@@ -123,6 +137,7 @@
   <script src="js/api.js"></script>
   <script src="js/posture.js"></script>
   <script src="js/saran.js"></script>
+  <script src="js/notify.js"></script>
   <script src="js/chart.js"></script>
   <script src="js/dashboard.js"></script>
 </body>
