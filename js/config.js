@@ -3,6 +3,8 @@ const CONFIG = {
   POLL_INTERVAL_MS: 1000,
   REQUEST_TIMEOUT_MS: 2500,
   STORAGE_KEY: "smartdesk_esp_ip",
+  DAILY_STORAGE_KEY: "smartdesk_daily_v1",
+  DAILY_DAYS: 7,
   LOG_MAX_ROWS: 10,
   CHART: {
     MAX_POINTS: 60

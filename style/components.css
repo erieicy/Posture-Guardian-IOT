@@ -1,12 +1,26 @@
 .card {
-  background: var(--card);
+  position: relative;
+  background: var(--grad-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: 20px;
+  padding-top: 22px;
   display: flex;
   flex-direction: column;
   gap: 14px;
+  overflow: hidden;
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent-3));
+  opacity: 0.85;
 }
 
 .card h2 {
@@ -35,14 +49,15 @@
 }
 
 .btn-primary {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  border-color: transparent;
   color: #07121f;
   font-weight: 600;
+  box-shadow: 0 6px 18px rgba(56, 189, 248, 0.35);
 }
 
 .btn-primary:hover {
-  filter: brightness(1.08);
+  filter: brightness(1.1);
   color: #07121f;
 }
 
@@ -103,9 +118,10 @@
 }
 
 .seg.active {
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: #07121f;
   font-weight: 600;
+  box-shadow: 0 4px 14px rgba(56, 189, 248, 0.3);
 }
 
 .switch {
@@ -144,7 +160,7 @@
 }
 
 .switch input:checked + .slider {
-  background: var(--ok);
+  background: linear-gradient(90deg, #10b981, var(--ok));
 }
 
 .switch input:checked + .slider::before {

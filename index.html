@@ -69,6 +69,23 @@
       <p id="desk-state" class="desk-note muted">Status meja: idle</p>
     </section>
 
+    <section class="card card-usage" id="card-usage" data-alert="false">
+      <h2>Waktu Penggunaan</h2>
+      <div class="usage-value" id="usage-time">--:--:--</div>
+      <ul class="usage-list">
+        <li><span>Duduk tanpa jeda</span><b id="sit-time">-</b></li>
+        <li><span>Postur buruk berjalan</span><b id="bad-time">-</b></li>
+        <li><span>LED Istirahat</span><b id="dev-led">Mati</b></li>
+      </ul>
+      <button id="btn-sit-reset" class="btn">Sudah Istirahat</button>
+    </section>
+
+    <section class="card card-week">
+      <h2>Riwayat 7 Hari</h2>
+      <div class="week-chart" id="week-chart"></div>
+      <p class="chart-hint">Persentase pembacaan di zona ideal tiap hari (tersimpan otomatis di browser).</p>
+    </section>
+
     <section class="card card-device">
       <h2>Perangkat</h2>
       <ul class="device-list">
@@ -77,6 +94,13 @@
         <li><span>Sinyal WiFi</span><b id="dev-rssi">-</b></li>
         <li><span>Jumlah Pembacaan</span><b id="dev-reads">0</b></li>
       </ul>
+    </section>
+
+    <section class="card card-saran wide">
+      <h2>Saran Kesehatan</h2>
+      <div id="saran-box" class="saran-box">Menunggu data&hellip;</div>
+      <h3 class="tips-title">Tips Rutin</h3>
+      <ul class="tips-list" id="tips-list"></ul>
     </section>
 
     <section class="card card-log wide">
@@ -93,11 +117,12 @@
 
   </main>
 
-  <footer class="app-footer">HC-SR04 &middot; ESP8266 &middot; Dashboard lokal tanpa server tambahan</footer>
+  <footer class="app-footer">HC-SR04 &middot; OLED SSD1306 &middot; LED Istirahat &middot; ESP8266</footer>
 
   <script src="js/config.js"></script>
   <script src="js/api.js"></script>
   <script src="js/posture.js"></script>
+  <script src="js/saran.js"></script>
   <script src="js/chart.js"></script>
   <script src="js/dashboard.js"></script>
 </body>

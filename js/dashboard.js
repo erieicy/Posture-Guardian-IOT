@@ -16,6 +16,15 @@
     modeAuto: $("mode-auto"),
     lamp: $("lamp-toggle"),
     deskState: $("desk-state"),
+    cardUsage: $("card-usage"),
+    usageTime: $("usage-time"),
+    sitTime: $("sit-time"),
+    badTime: $("bad-time"),
+    devLed: $("dev-led"),
+    sitReset: $("btn-sit-reset"),
+    weekChart: $("week-chart"),
+    saranBox: $("saran-box"),
+    tipsList: $("tips-list"),
     devIp: $("dev-ip"),
     devUptime: $("dev-uptime"),
     devRssi: $("dev-rssi"),
@@ -53,13 +62,22 @@
     els.connBadge.className = `badge ${ok ? "badge-ok" : "badge-danger"}`;
   }
 
-  function fmtUptime(totalSec) {
+  function pad2(n) {
+    return String(n).padStart(2, "0");
+  }
+
+  function fmtHMS(totalSec) {
+    const s = Math.max(0, Math.floor(totalSec || 0));
+    return `${Math.floor(s / 3600)}:${pad2(Math.floor((s % 3600) / 60))}:${pad2(s % 60)}`;
+  }
+
+  function fmtDur(totalSec) {
     const h = Math.floor(totalSec / 3600);
     const m = Math.floor((totalSec % 3600) / 60);
-    const s = totalSec % 60;
+    const sec = Math.floor(totalSec % 60);
     if (h > 0) return `${h}j ${m}m`;
-    if (m > 0) return `${m}m ${s}s`;
-    return `${s}s`;
+    if (m > 0) return `${m}m ${sec}s`;
+    return `${sec}s`;
   }
 
   function addLog(cm, p) {
@@ -84,9 +102,103 @@
     els.modeAuto.classList.toggle("active", mode === "auto");
   }
 
+  let lastSaranMsg = "";
+
+  function updateSaran(key, sitAlert) {
+    const msg = Saran.utama(key, sitAlert);
+    if (msg !== lastSaranMsg) {
+      lastSaranMsg = msg;
+      els.saranBox.textContent = msg;
+    }
+    const level = sitAlert ? "danger" : key === "ideal" ? "ok" : key === "too_close" ? "danger" : key === "too_far" ? "warn" : "";
+    els.saranBox.className = `saran-box${level ? ` level-${level}` : ""}`;
+  }
+
+  function buildTips() {
+    els.tipsList.innerHTML = "";
+    for (const tip of Saran.TIPS_UMUM) {
+      const li = document.createElement("li");
+      li.textContent = tip;
+      els.tipsList.appendChild(li);
+    }
+  }
+
+  function loadDaily() {
+    try {
+      return JSON.parse(localStorage.getItem(CONFIG.DAILY_STORAGE_KEY)) || {};
+    } catch {
+      return {};
+    }
+  }
+
+  function saveDaily() {
+    localStorage.setItem(CONFIG.DAILY_STORAGE_KEY, JSON.stringify(daily));
+  }
+
+  const daily = loadDaily();
+  let lastWeekSig = "";
+
+  function dateKey(d) {
+    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  }
+
+  function pruneDaily() {
+    const cutoff = new Date();
+    cutoff.setHours(0, 0, 0, 0);
+    cutoff.setDate(cutoff.getDate() - (CONFIG.DAILY_DAYS - 1));
+    for (const k of Object.keys(daily)) {
+      const [y, m, d] = k.split("-").map(Number);
+      if (new Date(y, m - 1, d) < cutoff) delete daily[k];
+    }
+  }
+
+  function recordPoll(key) {
+    const t = dateKey(new Date());
+    const entry = daily[t] || { total: 0, ideal: 0, minutes: 0 };
+    entry.total += 1;
+    if (key === "ideal") entry.ideal += 1;
+    entry.minutes += CONFIG.POLL_INTERVAL_MS / 60000;
+    daily[t] = entry;
+    pruneDaily();
+    saveDaily();
+  }
+
+  const DAY_LABELS = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+
+  function renderWeek() {
+    const today = new Date();
+    const rows = [];
+    for (let i = CONFIG.DAILY_DAYS - 1; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const k = dateKey(d);
+      const e = daily[k] || { total: 0, ideal: 0, minutes: 0 };
+      const pct = e.total > 0 ? Math.round((e.ideal / e.total) * 100) : 0;
+      rows.push({ key: k, pct, minutes: e.minutes, label: DAY_LABELS[d.getDay()], isToday: i === 0 });
+    }
+
+    const sig = rows.map((r) => `${r.key}:${r.pct}:${Math.round(r.minutes)}`).join("|");
+    if (sig === lastWeekSig) return;
+    lastWeekSig = sig;
+
+    els.weekChart.innerHTML = "";
+    for (const r of rows) {
+      const col = document.createElement("div");
+      col.className = `week-col${r.isToday ? " today" : ""}`;
+      col.title =
+        `${r.key} • ${Math.round(r.minutes)} menit pakai • ${r.pct}% posisi ideal`;
+      col.innerHTML =
+        `<span class="week-pct">${r.pct}%</span>` +
+        `<div class="week-bar-track"><div class="week-bar" style="height:${Math.max(r.pct, 3)}%"></div></div>` +
+        `<span class="week-label">${r.label}</span>`;
+      els.weekChart.appendChild(col);
+    }
+  }
+
   function apply(data) {
     const cm = Number(data.distance_cm) || 0;
     const p = Posture.evaluate(cm);
+    const sitAlert = data.sit_alert === true;
 
     els.distance.textContent = cm > 0 ? cm.toFixed(1) : "--";
     els.fill.style.width = `${(Posture.toRatio(cm) * 100).toFixed(1)}%`;
@@ -97,17 +209,30 @@
     chart.push(cm);
     chart.draw();
 
+    if (Number.isFinite(data.uptime_s)) els.usageTime.textContent = fmtHMS(data.uptime_s);
+    if (Number.isFinite(data.presence_s)) els.sitTime.textContent = fmtDur(data.presence_s);
+    if (Number.isFinite(data.bad_posture_s)) els.badTime.textContent = fmtDur(data.bad_posture_s);
+
+    els.cardUsage.dataset.alert = sitAlert;
+    els.devLed.textContent = sitAlert ? "Nyala" : "Mati";
+    els.devLed.classList.toggle("alert-on", sitAlert);
+
+    updateSaran(p.key, sitAlert);
+
     if (p.key !== state.lastKey) {
       if (state.lastKey !== null && cm > 0) addLog(cm, p);
       state.lastKey = p.key;
     }
+
+    recordPoll(p.key);
+    renderWeek();
 
     if (typeof data.mode === "string") applyMode(data.mode);
     if (typeof data.lamp === "boolean") els.lamp.checked = data.lamp;
     els.deskState.textContent = `Status meja: ${data.desk_state || "idle"}`;
 
     els.devIp.textContent = els.ipInput.value.trim();
-    if (Number.isFinite(data.uptime_s)) els.devUptime.textContent = fmtUptime(data.uptime_s);
+    if (Number.isFinite(data.uptime_s)) els.devUptime.textContent = fmtDur(data.uptime_s);
     if (Number.isFinite(data.rssi)) els.devRssi.textContent = `${data.rssi} dBm`;
 
     state.reads += 1;
@@ -165,7 +290,13 @@
     control("lamp", els.lamp.checked ? "on" : "off")
   );
 
+  els.sitReset.addEventListener("click", () => control("sit_reset", "1"));
+
+  window.addEventListener("resize", () => chart.draw());
+
   initZones();
+  buildTips();
+  renderWeek();
   const savedIp = localStorage.getItem(CONFIG.STORAGE_KEY) || CONFIG.DEFAULT_ESP_IP;
   els.ipInput.value = savedIp;
   Api.setBaseUrl(savedIp);
