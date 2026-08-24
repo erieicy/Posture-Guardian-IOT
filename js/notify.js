@@ -25,7 +25,8 @@ const Notify = (() => {
       new Notification(title, { body, tag });
       return true;
     } catch {
-      return false;
+      return fal
+      
     }
   }
 
